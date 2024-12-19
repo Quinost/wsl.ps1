@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"title": "SqlServer",
+			"color": "#64B5F6",
+			"path": "C:\\SQL"
+		},
+		{
+			"title": "RabbitMq",
+			"color": "#F06292",
+			"path": "C:\\RabbitMq"
+		}
+	]
+}
