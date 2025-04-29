@@ -41,19 +41,25 @@ function Convert-WindowsPathToWSLPath {
     }
 }
 
-function Wait-ForDockerDaemon {
-    param(
-        [Parameter(Mandatory = $true)]
-        $WShell,
-        [Parameter(Mandatory = $true)]
-        [string]$WindowTitle
-    )
-    Write-Host "Waiting for Docker daemon... "
-    $WShell.AppActivate($WindowTitle)
-    $WShell.SendKeys("until docker ps > /dev/null 2>&1; do echo 'Waiting for Docker Deamon...' && sleep 1; done{ENTER}")
-    Start-Sleep -Milliseconds 500
-    return $true
+$wslStatus = wsl echo "WSL"
+if ($wslStatus -eq "WSL"){
+    Write-Output "WSL works"
 }
+
+$dockerOutput = ""
+while (-not $dockerOutput) {
+    $dockerOutput = wsl bash -l -c "docker ps" 2>$null
+    
+    if (-not $dockerOutput) {
+        Write-Host "." -NoNewline 
+        Start-Sleep -Seconds 1
+    }
+}
+
+if ($dockerOutput) {
+    Write-Host "Docker works"
+} 
+
 
 $first = $true
 $randomString = (Generate-RandomString)
