@@ -41,25 +41,26 @@ function Convert-WindowsPathToWSLPath {
     }
 }
 
+
 $wslStatus = wsl echo "WSL"
 if ($wslStatus -eq "WSL"){
     Write-Output "WSL works"
 }
 
 $dockerOutput = ""
-while (-not $dockerOutput) {
+
+Write-Host "Waiting for docker: "
+
+while (-not $dockerOutput){
     $dockerOutput = wsl bash -l -c "docker ps" 2>$null
-    
+
     if (-not $dockerOutput) {
-        Write-Host "." -NoNewline 
+        Write-Host "." -NoNewline
         Start-Sleep -Seconds 1
     }
 }
 
-if ($dockerOutput) {
-    Write-Host "Docker works"
-} 
-
+Write-Output "Docker works"
 
 $first = $true
 $randomString = (Generate-RandomString)
@@ -82,14 +83,8 @@ foreach ($item in $settings.folders) {
         $activeWindows = Get-Process | Where-Object { $_.MainWindowTitle -match $uniqueTitle }
     } until ($activeWindows.Count -gt 0)
     
-    if (Wait-ForDockerDaemon -WShell $wshell -WindowTitle $uniqueTitle) {
-        $wshell.AppActivate($uniqueTitle)
-        $wslPath = Convert-WindowsPathToWSLPath -WindowsPath $item.path
-        $wshell.SendKeys("cd $wslPath{ENTER}")
-        $wshell.SendKeys("clear{ENTER}")
 
-        $wshell.SendKeys("docker-compose up{ENTER}")
-    } else {
-        Write-Error "Docker daemon is not available in window: $uniqueTitle"
-    }
+    $wshell.AppActivate($uniqueTitle)
+    $wslPath = Convert-WindowsPathToWSLPath -WindowsPath $item.path
+    $wshell.SendKeys("cd $wslPath && clear && docker-compose up{ENTER}")
 }
