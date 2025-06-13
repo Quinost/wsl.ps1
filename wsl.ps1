@@ -20,71 +20,45 @@ foreach ($item in $settings.folders) {
     }
 }
 
-function Generate-RandomString {
-    $length = 3
-    $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    -join ((1..$length) | ForEach-Object { $chars[(Get-Random -Minimum 0 -Maximum $chars.Length)] })
-}
-
-function Convert-WindowsPathToWSLPath {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$WindowsPath
-    )
-    if ($WindowsPath -match "^([a-zA-Z]):\\") {
-        $driveLetter = $Matches[1].ToLower()
-        $wslPath = "/mnt/$driveLetter/" + ($WindowsPath -replace "^[a-zA-Z]:\\", "").Replace("\", "/")
-        return $wslPath
-    } else {
-        Write-Warning "The path '$WindowsPath' does not appear to be a valid Windows path."
-        return $WindowsPath
-    }
-}
-
-
+#Checking if WSL start working
 $wslStatus = wsl echo "WSL"
 if ($wslStatus -eq "WSL"){
     Write-Output "WSL works"
 }
 
-$dockerOutput = ""
-
-Write-Host "Waiting for docker: "
-
-while (-not $dockerOutput){
+#Checking if docker run in WSL
+Write-Host "Waiting for docker"
+while (-not $dockerOutput) {
     $dockerOutput = wsl bash -l -c "docker ps" 2>$null
-
+    
     if (-not $dockerOutput) {
-        Write-Host "." -NoNewline
+        Write-Host "." -NoNewline 
         Start-Sleep -Seconds 1
     }
 }
 
-Write-Output "Docker works"
+Write-Host "Docker works"
 
-$first = $true
-$randomString = (Generate-RandomString)
-$wshell = New-Object -ComObject WScript.Shell
+$tabs = @()
 
 foreach ($item in $settings.folders) {
-    $uniqueTitle = $item.title + " - " + $randomString
+    $uniqueTitle = "$($item.title)"
     $color = $item.color
-    Write-Host "Run" $uniqueTitle
-    
-    if ($first) {
-        $null = Start-Process wt -ArgumentList "--title `"$uniqueTitle`" --suppressApplicationTitle --tabColor `"$color`" -p `"Ubuntu`"" -PassThru
-        $first = $false
-    } else {
-        $null = Start-Process wt -ArgumentList "-w 0 nt --title `"$uniqueTitle`" --suppressApplicationTitle --tabColor `"$color`" -p `"Ubuntu`"" -PassThru
-    }
-    
-    do {
-        Start-Sleep -Milliseconds 100
-        $activeWindows = Get-Process | Where-Object { $_.MainWindowTitle -match $uniqueTitle }
-    } until ($activeWindows.Count -gt 0)
-    
+    $path = $item.path
 
-    $wshell.AppActivate($uniqueTitle)
-    $wslPath = Convert-WindowsPathToWSLPath -WindowsPath $item.path
-    $wshell.SendKeys("cd $wslPath && clear && docker-compose up{ENTER}")
+    $tab = @(
+        "nt",
+        "--title", "`"$uniqueTitle`"",
+        "--suppressApplicationTitle",
+        "--tabColor", "`"$color`"",
+        "-p", "`"Ubuntu`"",
+        "--", "wsl", "--cd", $path 
+        "--", "bash -l -c 'docker-compose up && exec bash'"
+    ) -join " "
+
+    $tabs += $tab
 }
+
+$allTabs = $tabs -join " ; "
+
+Start-Process wt.exe -ArgumentList $allTabs
