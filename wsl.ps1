@@ -8,7 +8,6 @@ catch {
     exit
 }
 
-
 foreach ($item in $settings.folders) {
     if (!(Test-Path -Path $item.path -PathType Container)) {
         Write-Error "Folder '$item' does not exist."
@@ -38,16 +37,18 @@ while ($true) {
 $tabs = @()
 
 foreach ($item in $settings.folders) {
-    $uniqueTitle = "$($item.title)"
+    if (-not $item.enabled) {continue}
+
+    $title = "$($item.title)"
     $color = $item.color
     $path = $item.path
     $terminalProfile = $settings.terminalProfile
 
-    Write-Host "Running $uniqueTitle"
+    Write-Host "Running $title"
 
     $tab = @(
         "nt",
-        "--title", "`"$uniqueTitle`"",
+        "--title", "`"$title`"",
         "--suppressApplicationTitle",
         "--tabColor", "`"$color`"",
         "-p", "`"$terminalProfile`"",

@@ -2,11 +2,13 @@
 	"terminalProfile": "Ubuntu",
 	"folders": [
 		{
+			"enabled": true,
 			"title": "SqlServer",
 			"color": "#64B5F6",
 			"path": "C:\\SQL"
 		},
 		{
+			"enabled": false,
 			"title": "RabbitMq",
 			"color": "#F06292",
 			"path": "C:\\RabbitMq"
